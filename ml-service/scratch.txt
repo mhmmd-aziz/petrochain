@@ -1,0 +1,109 @@
+Cell 9:
+FEATURE_COLS = [
+    'kondisi_rumah', 'sumber_listrik', 'kepemilikan_aset', 'pendidikan_kk',
+    'jml_tanggungan', 'jenis_pekerjaan', 'akses_air', 'kepemilikan_lahan'
+]
+TARGET_COL = 'level_subsidi'
+
+X = df[FEATURE_COLS].values
+y = df[TARGET_COL].values
+
+# Split stratified: 70% train, 15% val, 15% test
+X_temp, X_test, y_temp, y_test = train_test_split(
+    X, y, test_size=0.15, random_state=42, stratify=y
+)
+X_train, X_val, y_train, y_val = train_test_split(
+    X_temp, y_temp, test_size=0.176, random_state=42, stratify=y_temp  # 0.176 ≈ 15% dari total
+)
+
+print(f'Train : {X_train.shape[0]} sampel')
+print(f'Val   : {X_val.shape[0]} sampel')
+print(f'Test  : {X_test.shape[0]} sampel')
+print(f'\nDistribusi kelas train:')
+unique, counts = np.unique(y_train, return_counts=True)
+for u, c in zip(unique, counts):
+    print(f'  Level {u}: {c} ({c/len(y_train)*100:.1f}%)')
+
+Cell 12:
+# XGBoost perlu label dimulai dari 0
+y_train_xgb = y_train_res - 1
+y_val_xgb = y_val - 1
+y_test_xgb = y_test - 1
+
+models = {
+    'XGBoost': XGBClassifier(
+        n_estimators=300,
+        max_depth=6,
+        learning_rate=0.05,
+        subsample=0.8,
+        colsample_bytree=0.8,
+        use_label_encoder=False,
+        eval_metric='mlogloss',
+        random_state=42,
+        n_jobs=-1,
+    ),
+    'LightGBM': LGBMClassifier(
+        n_estimators=300,
+        max_depth=6,
+        learning_rate=0.05,
+        subsample=0.8,
+        colsample_bytree=0.8,
+        random_state=42,
+        n_jobs=-1,
+        verbose=-1,
+    ),
+    'Random Forest': RandomForestClassifier(
+        n_estimators=300,
+        max_depth=10,
+        min_samples_split=5,
+        min_samples_leaf=2,
+        random_state=42,
+        n_jobs=-1,
+    ),
+    'Logistic Regression': LogisticRegression(
+        max_iter=1000,
+        random_state=42,
+        n_jobs=-1,
+        multi_class='ovr',
+    ),
+}
+
+results = {}
+
+for name, model in models.items():
+    print(f'\n⏳ Training {name}...')
+
+    # XGBoost pakai label 0-2, sisanya 1-3
+    is_xgb = isinstance(model, XGBClassifier)
+    _y_train = y_train_xgb if is_xgb else y_train_res
+    _y_val   = y_val_xgb   if is_xgb else y_val
+    _y_test  = y_test_xgb  if is_xgb else y_test
+
+    model.fit(X_train_res, _y_train)
+
+    # Prediksi
+    y_pred = model.predict(X_test)
+
+    # Koreksi label XGBoost kembali ke 1-3
+    if is_xgb:
+        y_pred = y_pred + 1
+        _y_test_eval = y_test  # Gunakan label asli 1-3 untuk evaluasi
+    else:
+        _y_test_eval = y_test
+
+    acc = accuracy_score(_y_test_eval, y_pred)
+    f1  = f1_score(_y_test_eval, y_pred, average='weighted')
+    f1_macro = f1_score(_y_test_eval, y_pred, average='macro')
+
+    results[name] = {
+        'model'    : model,
+        'accuracy' : acc,
+        'f1_weighted': f1,
+        'f1_macro' : f1_macro,
+        'y_pred'   : y_pred,
+        'is_xgb'   : is_xgb,
+    }
+
+    print(f'  ✅ Accuracy : {acc:.4f}')
+    print(f'     F1 (weighted): {f1:.4f}')
+    print(f'     F1 (macro)  : {f1_macro:.4f}')

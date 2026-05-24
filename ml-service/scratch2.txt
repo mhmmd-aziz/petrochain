@@ -1,0 +1,20 @@
+Cell 17:
+# ---- Feature importance XGBoost ----
+xgb_model = results['XGBoost']['model']
+importances = xgb_model.feature_importances_
+feat_imp_df = pd.DataFrame({'Fitur': FEATURE_COLS, 'Importance': importances})\
+               .sort_values('Importance', ascending=True)
+
+plt.figure(figsize=(9, 5))
+colors_imp = ['#e74c3c' if v > feat_imp_df['Importance'].mean() else '#3498db'
+              for v in feat_imp_df['Importance']]
+plt.barh(feat_imp_df['Fitur'], feat_imp_df['Importance'], color=colors_imp, alpha=0.85)
+plt.xlabel('Feature Importance (Gain)', fontsize=12)
+plt.title('Feature Importance — XGBoost', fontsize=14, fontweight='bold')
+plt.axvline(feat_imp_df['Importance'].mean(), color='black', linestyle='--',
+            linewidth=1, label=f'Mean = {feat_imp_df["Importance"].mean():.3f}')
+plt.legend()
+plt.tight_layout()
+plt.savefig('../models/feature_importance.png', dpi=150, bbox_inches='tight')
+plt.show()
+print('✅ Feature importance disimpan')

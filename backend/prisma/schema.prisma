@@ -1,0 +1,60 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Warga {
+  id                String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nik               String       @unique @db.VarChar(16)
+  nama_lengkap      String       @db.VarChar(255)
+  alamat            String?      @db.Text
+  kondisi_rumah     Int?
+  sumber_listrik    Int?
+  kepemilikan_aset  Int?
+  pendidikan_kk     Int?
+  jml_tanggungan    Int?
+  jenis_pekerjaan   Int?
+  akses_air         Int?
+  kepemilikan_lahan Int?
+  level_subsidi     Int?
+  kuota_liter       Int?
+  ai_confidence     Decimal?     @db.Decimal(5, 4)
+  created_at        DateTime?    @default(now()) @db.Timestamp(6)
+  
+  // Relations
+  transaksi         Transaksi[]
+  notifikasi        Notifikasi[]
+
+  @@map("warga")
+}
+
+model Transaksi {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  warga_id         String?   @db.Uuid
+  spbu_id          String?   @db.VarChar(20)
+  liter            Decimal?  @db.Decimal(5, 2)
+  level_subsidi    Int?
+  blockchain_tx    String?   @db.VarChar(100)
+  created_at       DateTime? @default(now()) @db.Timestamp(6)
+
+  warga            Warga?    @relation(fields: [warga_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("transaksi")
+}
+
+model Notifikasi {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  warga_id         String?   @db.Uuid
+  judul            String?   @db.VarChar(100)
+  pesan            String?   @db.Text
+  dibaca           Boolean?  @default(false)
+  created_at       DateTime? @default(now()) @db.Timestamp(6)
+
+  warga            Warga?    @relation(fields: [warga_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("notifikasi")
+}
