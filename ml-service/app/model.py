@@ -17,6 +17,8 @@ from app.schema import (
     PredictResponse,
     LEVEL_QUOTA_MAP,
     LEVEL_LABEL_MAP,
+    VEHICLE_QUOTA_MAP,
+    VEHICLE_LABEL_MAP,
     FEATURE_ORDER,
 )
 
@@ -158,6 +160,12 @@ def predict(req: PredictRequest) -> PredictResponse:
     """
     Jalankan prediksi level subsidi dari fitur sosial-ekonomi warga.
 
+    Sistem kuota v2 — dua dimensi:
+      - Level subsidi (1/2/3) diprediksi AI dari fitur sosio-ekonomi
+        → menentukan KELAYAKAN mendapat subsidi
+      - Kategori kendaraan diverifikasi petugas berdasarkan dokumen fisik
+        → menentukan BERAPA LITER kuota per bulan
+
     Raises:
         RuntimeError: Jika model belum di-load.
     """
@@ -175,8 +183,7 @@ def predict(req: PredictRequest) -> PredictResponse:
     # Hitung fitur turunan (HARUS identik dengan training_v2.py)
     features = _compute_engineered_features(base_features)
 
-
-    # Predict class
+    # Predict level kemiskinan (kelayakan subsidi)
     predicted_level: int = int(_model.predict(features)[0])
 
     # Ambil confidence dari probabilitas kelas yang diprediksi
@@ -189,15 +196,23 @@ def predict(req: PredictRequest) -> PredictResponse:
         # Fallback jika model tidak support predict_proba
         confidence = 1.0
 
+    # Kuota dari kategori kendaraan — BUKAN dari level kemiskinan
+    kategori = req.kategori_kendaraan
+    kuota_liter = VEHICLE_QUOTA_MAP[kategori]
+
     logger.info(
-        f"Prediksi: level={predicted_level}, "
+        f"Prediksi: level={predicted_level} ({LEVEL_LABEL_MAP[predicted_level]}), "
         f"confidence={confidence:.3f}, "
-        f"kuota={LEVEL_QUOTA_MAP[predicted_level]} liter"
+        f"kategori={kategori}, "
+        f"kuota={kuota_liter} L/bln"
     )
 
     return PredictResponse(
         level=predicted_level,
-        kuota_liter=LEVEL_QUOTA_MAP[predicted_level],
+        kategori_kendaraan=kategori,
+        kuota_liter=kuota_liter,
         confidence=round(confidence, 4),
-        label=LEVEL_LABEL_MAP[predicted_level],
+        label_level=LEVEL_LABEL_MAP[predicted_level],
+        label_kendaraan=VEHICLE_LABEL_MAP[kategori],
     )
+

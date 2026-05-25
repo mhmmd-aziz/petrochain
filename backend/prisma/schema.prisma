@@ -20,10 +20,14 @@ model Warga {
   jenis_pekerjaan   Int?
   akses_air         Int?
   kepemilikan_lahan Int?
-  level_subsidi     Int?
-  kuota_liter       Int?
-  ai_confidence     Decimal?     @db.Decimal(5, 4)
-  created_at        DateTime?    @default(now()) @db.Timestamp(6)
+  level_subsidi          Int?
+  kategori_kendaraan     String?      @default("motor_pribadi") @db.VarChar(20)
+  no_polisi              String?      @db.VarChar(15)
+  verified_by            String?      @db.VarChar(100)
+  tanggal_verifikasi     DateTime?    @db.Timestamp(6)
+  kuota_liter            Int?
+  ai_confidence          Decimal?     @db.Decimal(5, 4)
+  created_at             DateTime?    @default(now()) @db.Timestamp(6)
   
   // Relations
   transaksi         Transaksi[]
@@ -57,4 +61,20 @@ model Notifikasi {
   warga            Warga?    @relation(fields: [warga_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@map("notifikasi")
+}
+
+// ─── Simulated STNK Registry ─────────────────────────────────────────────
+// Di produksi: diganti integrasi API Korlantas / Ditjen Hubdat
+// Di simulasi: diisi via seed script, diquery oleh endpoint /verify-kendaraan
+model Kendaraan {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  no_polisi       String    @unique @db.VarChar(15)
+  nama_pemilik    String    @db.VarChar(255)
+  tipe_kendaraan  String    @db.VarChar(10)   // "motor" | "mobil"
+  merk            String?   @db.VarChar(100)
+  tahun           Int?
+  status_aktif    Boolean   @default(true)     // false = STNK mati / kendaraan bermasalah
+  created_at      DateTime? @default(now()) @db.Timestamp(6)
+
+  @@map("kendaraan")
 }

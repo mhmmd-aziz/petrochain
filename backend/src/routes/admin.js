@@ -15,4 +15,7 @@ router.post('/warga/bulk-import', adminController.importWargaBulk);
 router.put('/warga/:id', adminController.updateWarga);
 router.delete('/warga/:id', adminController.deleteWarga);
 
+// STNK Verification endpoint
+router.post('/verify-kendaraan', adminController.verifyKendaraan);
+
 module.exports = router;

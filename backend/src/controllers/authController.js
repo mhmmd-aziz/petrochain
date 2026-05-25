@@ -7,7 +7,7 @@ exports.login = async (req, res, next) => {
     // Mock login for admin
     if (username === 'admin' && password === 'admin123') {
       const token = jwt.sign(
-        { id: 'admin1', role: 'admin' },
+        { id: 'admin1', username: 'Administrator Pertamina', role: 'admin' },
         process.env.JWT_SECRET,
         { expiresIn: '1d' }
       );

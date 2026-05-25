@@ -15,10 +15,18 @@
   - Komposisi fasilitas kelistrikan warga.
   - Kondisi fisik perumahan warga.
 
-### 2. Machine Learning Engine (Python)
+### 2. Machine Learning Engine (Python) + Sistem Kuota Cerdas
 - Mesin prediksi ditenagai **LightGBM (LGBMClassifier)**.
-- **Auto-Evaluation**: AI secara dinamis akan memprediksi kelayakan subsidi BBM berdasarkan 8 parameter sosial-ekonomi yang kompleks (Pekerjaan, Kondisi Rumah, Jumlah Tanggungan, dll).
+- **Auto-Evaluation**: AI secara dinamis memprediksi *kelayakan subsidi* warga berdasarkan 8 parameter sosial-ekonomi (Pekerjaan, Kondisi Rumah, Jumlah Tanggungan, dll).
 - Memberikan skor akurasi (*Confidence Score*). Jika *score* < 70%, sistem mengkategorikannya sebagai anomali yang perlu pengecekan manual.
+- **Sistem Kuota Dua Dimensi** (v2) — Kuota ditentukan dari dua faktor terpisah:
+  - **Dimensi 1 (AI):** Level kelayakan subsidi (1=Miskin Ekstrem, 2=Miskin, 3=Rentan Miskin) — menentukan *apakah* berhak dapat subsidi
+  - **Dimensi 2 (Petugas):** Kategori Kendaraan & Fungsi Usaha — menentukan *berapa liter* per bulan:
+    | Kategori | Kuota | Keterangan |
+    |---|---|---|
+    | 🏍️ Motor Pribadi | **50 L/bln** | Komuter / kendaraan swasta non-produktif |
+    | 🛵 Motor Produktif | **100 L/bln** | Ojek Online (Gojek/Grab Motor), Kurir |
+    | 🚗 Mobil Produktif | **350 L/bln** | Supir Grab Mobil, Angkot, UMKM roda-4 |
 
 ### 3. Manajemen Warga & Bulk Import (CRUD)
 - Formulir pendaftaran terpadu untuk individu.

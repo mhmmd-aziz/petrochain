@@ -81,20 +81,57 @@ export default function BatchPrediction() {
   };
 
   const handleDownloadTemplate = () => {
-    const templateData = [{
-      'NIK': '1234567812345678',
-      'Nama Lengkap': 'John Doe',
-      'Alamat': 'Jl. Contoh No. 123',
-      'Kondisi Rumah': 3,
-      'Sumber Listrik': 2,
-      'Kepemilikan Aset': 1,
-      'Pendidikan KK': 4,
-      'Jumlah Tanggungan': 2,
-      'Jenis Pekerjaan': 3,
-      'Akses Air': 1,
-      'Kepemilikan Lahan': 2
-    }];
+    const templateData = [
+      {
+        'NIK': '1234567812345678',
+        'Nama Lengkap': 'Siti Rahayu',
+        'Alamat': 'Jl. Mawar No. 5, Banda Aceh',
+        'Kondisi Rumah': 2,
+        'Sumber Listrik': 2,
+        'Kepemilikan Aset': 1,
+        'Pendidikan KK': 3,
+        'Jumlah Tanggungan': 3,
+        'Jenis Pekerjaan': 3,
+        'Akses Air': 2,
+        'Kepemilikan Lahan': 1,
+        'Kategori Kendaraan': 'motor_pribadi',
+      },
+      {
+        'NIK': '9876543298765432',
+        'Nama Lengkap': 'Budi Santoso',
+        'Alamat': 'Jl. Melati No. 12, Banda Aceh',
+        'Kondisi Rumah': 2,
+        'Sumber Listrik': 3,
+        'Kepemilikan Aset': 2,
+        'Pendidikan KK': 4,
+        'Jumlah Tanggungan': 2,
+        'Jenis Pekerjaan': 5,
+        'Akses Air': 3,
+        'Kepemilikan Lahan': 1,
+        'Kategori Kendaraan': 'motor_produktif',
+      },
+      {
+        'NIK': '1122334455667788',
+        'Nama Lengkap': 'Ahmad Fauzi',
+        'Alamat': 'Jl. Kenanga No. 3, Aceh Besar',
+        'Kondisi Rumah': 3,
+        'Sumber Listrik': 3,
+        'Kepemilikan Aset': 2,
+        'Pendidikan KK': 3,
+        'Jumlah Tanggungan': 4,
+        'Jenis Pekerjaan': 5,
+        'Akses Air': 2,
+        'Kepemilikan Lahan': 2,
+        'Kategori Kendaraan': 'mobil_produktif',
+      },
+    ];
     const worksheet = XLSX.utils.json_to_sheet(templateData);
+    // Set lebar kolom agar mudah dibaca
+    worksheet['!cols'] = [
+      { wch: 18 }, { wch: 22 }, { wch: 30 }, { wch: 14 }, { wch: 14 },
+      { wch: 16 }, { wch: 14 }, { wch: 18 }, { wch: 16 }, { wch: 10 },
+      { wch: 16 }, { wch: 22 },
+    ];
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Template Import");
     XLSX.writeFile(workbook, "Template_Import_PetroChain.xlsx");
@@ -112,19 +149,26 @@ export default function BatchPrediction() {
       const worksheet = workbook.Sheets[workbook.SheetNames[0]];
       const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
-      const mappedData = jsonData.map((row: any) => ({
-        nik: row.NIK || row.nik,
-        nama_lengkap: row['Nama Lengkap'] || row.nama_lengkap || row.nama,
-        alamat: row.Alamat || row.alamat,
-        kondisi_rumah: row['Kondisi Rumah'] || row.kondisi_rumah || 3,
-        sumber_listrik: row['Sumber Listrik'] || row.sumber_listrik || 3,
-        kepemilikan_aset: row['Kepemilikan Aset'] || row.kepemilikan_aset || 3,
-        pendidikan_kk: row['Pendidikan KK'] || row.pendidikan_kk || 3,
-        jml_tanggungan: row['Jumlah Tanggungan'] || row.jml_tanggungan || 0,
-        jenis_pekerjaan: row['Jenis Pekerjaan'] || row.jenis_pekerjaan || 3,
-        akses_air: row['Akses Air'] || row.akses_air || 3,
-        kepemilikan_lahan: row['Kepemilikan Lahan'] || row.kepemilikan_lahan || 3
-      }));
+      const VALID_KATEGORI = ['motor_pribadi', 'motor_produktif', 'mobil_produktif'];
+      const mappedData = jsonData.map((row: any) => {
+        const rawKategori = (row['Kategori Kendaraan'] || row.kategori_kendaraan || 'motor_pribadi')
+          .toString().toLowerCase().trim().replace(/\s+/g, '_');
+        const kategori = VALID_KATEGORI.includes(rawKategori) ? rawKategori : 'motor_pribadi';
+        return {
+          nik: row.NIK || row.nik,
+          nama_lengkap: row['Nama Lengkap'] || row.nama_lengkap || row.nama,
+          alamat: row.Alamat || row.alamat,
+          kondisi_rumah: row['Kondisi Rumah'] || row.kondisi_rumah || 3,
+          sumber_listrik: row['Sumber Listrik'] || row.sumber_listrik || 3,
+          kepemilikan_aset: row['Kepemilikan Aset'] || row.kepemilikan_aset || 3,
+          pendidikan_kk: row['Pendidikan KK'] || row.pendidikan_kk || 3,
+          jml_tanggungan: row['Jumlah Tanggungan'] || row.jml_tanggungan || 0,
+          jenis_pekerjaan: row['Jenis Pekerjaan'] || row.jenis_pekerjaan || 3,
+          akses_air: row['Akses Air'] || row.akses_air || 3,
+          kepemilikan_lahan: row['Kepemilikan Lahan'] || row.kepemilikan_lahan || 3,
+          kategori_kendaraan: kategori,
+        };
+      });
 
       const token = localStorage.getItem("token");
       const res = await fetch("http://localhost:5000/api/admin/warga/bulk-import", {
